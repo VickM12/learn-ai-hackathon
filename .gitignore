@@ -1,0 +1,14 @@
+# Personal learning context stays out of commits by default.
+# It can still appear in your AI provider's conversation.
+/devpost/learner-profile.md
+
+# Local credentials. A secret-free example file is fine to commit.
+.env
+.env.*
+!.env.example
+
+# Godot import cache, local editor, and local export output.
+.godot/
+build/
+tools/
+certs/
