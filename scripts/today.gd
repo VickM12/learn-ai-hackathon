@@ -41,10 +41,18 @@ func _ready() -> void:
 	panel.add_child(scroll)
 	scroll.get_v_scroll_bar().custom_minimum_size.x = 18
 
+	var inner_margin := MarginContainer.new()
+	inner_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner_margin.add_theme_constant_override("margin_left", 24)
+	inner_margin.add_theme_constant_override("margin_top", 20)
+	inner_margin.add_theme_constant_override("margin_right", 24)
+	inner_margin.add_theme_constant_override("margin_bottom", 26)
+	scroll.add_child(inner_margin)
+
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 10)
-	scroll.add_child(box)
+	inner_margin.add_child(box)
 
 	var title := Label.new()
 	title.text = "Vineyard Journal"

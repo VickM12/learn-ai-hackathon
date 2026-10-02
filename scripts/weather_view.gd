@@ -65,8 +65,8 @@ func show_weather(today_key: String, current_temp, current_humidity, rows: Array
 		var empty_history := Label.new()
 		empty_history.text = "No recent days loaded."
 		history_list.add_child(empty_history)
-	temp_chart.set_series(temps)
-	humidity_chart.set_series(humidities)
+	temp_chart.set_series(temps, Color("b35c32"))
+	humidity_chart.set_series(humidities, Color("3f7182"))
 
 
 func _heading(text: String) -> Label:

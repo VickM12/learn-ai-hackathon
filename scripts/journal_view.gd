@@ -50,7 +50,7 @@ func show_entries(entries: Dictionary, weather_by_date: Dictionary) -> void:
 		var date_key := str(key)
 		button.pressed.connect(func() -> void: _show_detail(date_key, entry, weather_by_date))
 		list.add_child(button)
-	chart.set_series(soil)
+	chart.set_series(soil, Color("557a46"))
 	if keys.is_empty():
 		detail.text = "No journal entries yet."
 

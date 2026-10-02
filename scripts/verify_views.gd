@@ -37,4 +37,6 @@ func _run() -> void:
 		return
 	print("ROWS ", rows.size())
 	print("CHART ", chart.point_count())
+	chart.free()
+	client.free()
 	quit(0)

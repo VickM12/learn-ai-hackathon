@@ -66,3 +66,4 @@ Activity mode: not started
 - Today's page scrolls — the Save button was below the window because the form was taller than the parchment page and nothing could scroll.
 - The dashboard is a weather snapshot, and the entry form is a separate tab — the first build put the whole form on the opening screen. The learner's picture was a snapshot plus tabs for a new entry, past journals, and weather.
 - The navigation now looks like folder tabs attached to a padded parchment page, and the dashboard uses summary cards — the first tabbed pass repeated navigation as large dashboard buttons and cramped text against the page edge.
+- The New entry form now has inner page margins, and trend charts use labeled scales, grid lines, tinted fills, colored lines, and data markers — the first charts were unlabeled black polylines and the form still touched its inner border.
