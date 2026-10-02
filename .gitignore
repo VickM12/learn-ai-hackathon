@@ -12,3 +12,8 @@
 build/
 tools/
 certs/
+
+# React/Tauri generated output.
+node_modules/
+dist/
+src-tauri/target/
