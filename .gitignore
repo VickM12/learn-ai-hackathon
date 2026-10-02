@@ -7,7 +7,7 @@
 .env.*
 !.env.example
 
-# Godot import cache, local editor, and local export output.
+# Local editor cache, downloaded tools, and export output.
 .godot/
 build/
 tools/

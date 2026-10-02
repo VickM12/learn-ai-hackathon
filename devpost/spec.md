@@ -176,7 +176,6 @@ package.json                  # React, Recharts, Tauri and build commands
 vite.config.ts
 devpost/                      # Devpost planning workspace
 README.md                     # run and build instructions
-project.godot, scenes/, scripts/, theme/  # preserved earlier proof, not current app
 ```
 
 ## External Services and Dependencies
@@ -220,7 +219,7 @@ Weather credit, on the weather surface: “Weather data by Open-Meteo.com, CC BY
 ## Decisions and Open Issues
 
 - **Tauri + React rewrite** — learner-directed implementation revision after the Godot proof showed that forms, calendars, scrolling, and charts required disproportionate custom UI work. The product and local-executable boundary did not change.
-- **Earlier Godot files remain in git history and the working tree** — preserved as evidence of iteration; they are not the current runtime.
+- **The Godot proof was removed from the working tree** after the Tauri app was accepted. Earlier commits still contain that iteration.
 - **Open-Meteo, no key, with a visible credit** — recommended and accepted. Tradeoff: non-commercial terms; a paid product needs a commercial key later.
 - **WebView local storage** — data stays on this Windows user account and is not synced.
 - **Signing** — they do not have a certificate. TwoBit Territories LLC is publisher metadata; verified Windows signing stays off.

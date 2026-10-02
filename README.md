@@ -29,5 +29,3 @@ The executable produced and smoke-tested in this Cursor workspace is at `build/t
 - 90 days of historical weather and a 7-day forecast
 - Preset and native calendar date ranges
 - Calendar view pairing weather with saved entries
-
-The earlier Godot proof remains in the repository as build history; the Tauri app is the current implementation.
