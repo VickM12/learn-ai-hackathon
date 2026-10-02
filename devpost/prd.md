@@ -10,7 +10,7 @@ A leather-bound journal for one six-vine vineyard in northeast Ohio. The grower 
 ## The Core Journey
 
 1. They open Vineyard Journal. If no zip code is saved, it asks for one before anything else. The zip is saved, and later opens skip the prompt.
-2. They land on today. The date is the day they opened it. Temperature and humidity for that zip are filled in and can be edited. Soil pH, sugar content, and a notes box are there and empty. If the journal has no entries yet, it says "write an entry to get started."
+2. They land on the dashboard. It shows the date, the place, and a snapshot of the current temperature and humidity. If the journal has no entries yet, it says "write an entry to get started." Tabs across the top open a new entry, past journals, weather, and the calendar.
 3. If the weather cannot be pulled, they see a short, plain error and a retry control. They can still save.
 4. They type whatever they have. Nothing is required. They save. The entry is stored as that day's date, and the page shows what they saved.
 5. They leave and open the journal again that same day. They see that saved entry, not a blank page.
@@ -24,12 +24,13 @@ Success is the demo beat from `scope.md > What "Working" Looks Like`: save a rea
 Five surfaces, and no others.
 
 - **Zip prompt.** Shown only when no zip is saved. One zip code field and a way to continue. After it is saved, this prompt does not appear again in this proof.
-- **Today.** The dashboard and the entry are the same page. The date, temperature, humidity, soil pH, sugar content, notes, and save. The empty-journal line sits on this page when the journal has no entries.
-- **Calendar.** Earlier dates. Choosing one opens that day: its weather and its journal entry.
+- **Today.** A snapshot only: the date, place, current temperature, and humidity, plus today's saved readings when an entry exists. It is not the entry form.
+- **New entry.** Soil pH, sugar, notes, and editable temperature and humidity. Save returns to the dashboard, which then shows those readings.
+- **Calendar.** Earlier dates. Choosing one shows that day's weather and journal entry. It does not create an entry.
 - **Weather.** Today's forecast, the weekly forecast, historical weather, and a trend graph.
 - **Journal.** Past entries, and a soil-health trend.
 
-They move among Today, Calendar, Weather, and Journal directly. No extra home screen.
+They move with the tabs: Dashboard, New entry, Past journals, Weather, and Calendar. The dashboard is the home screen.
 
 ## Look and Feel
 

@@ -59,3 +59,41 @@ func _get_json(url: String) -> Dictionary:
 		push_error("Weather response was not an object")
 		return {}
 	return parsed
+
+
+func daily_rows(forecast: Dictionary) -> Array:
+	var daily = forecast.get("daily", {})
+	var times = daily.get("time", [])
+	var temps = daily.get("temperature_2m_mean", [])
+	if typeof(times) != TYPE_ARRAY or typeof(temps) != TYPE_ARRAY:
+		return []
+	var humidity_by_day := _humidity_by_day(forecast)
+	var rows: Array = []
+	for i in times.size():
+		var day := str(times[i]).substr(0, 10)
+		rows.append({
+			"date": day,
+			"temperature": temps[i] if i < temps.size() else null,
+			"humidity": humidity_by_day.get(day, null),
+		})
+	return rows
+
+
+func _humidity_by_day(forecast: Dictionary) -> Dictionary:
+	var hourly = forecast.get("hourly", {})
+	var times = hourly.get("time", [])
+	var values = hourly.get("relative_humidity_2m", [])
+	if typeof(times) != TYPE_ARRAY or typeof(values) != TYPE_ARRAY:
+		return {}
+	var sums := {}
+	var counts := {}
+	for i in mini(times.size(), values.size()):
+		if values[i] == null:
+			continue
+		var day := str(times[i]).substr(0, 10)
+		sums[day] = float(sums.get(day, 0.0)) + float(values[i])
+		counts[day] = int(counts.get(day, 0)) + 1
+	var averages := {}
+	for day in sums.keys():
+		averages[day] = float(sums[day]) / float(counts[day])
+	return averages

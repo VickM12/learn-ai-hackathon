@@ -77,7 +77,7 @@ Godot `StyleBoxFlat` and a project theme can honor this. No web CSS and no extra
 
 ### App shell
 
-`Main` shows one surface at a time: zip prompt, or Today, Calendar, Weather, and Journal. After the zip is saved, those four are direct tabs. There is no extra home screen.
+`Main` shows the zip prompt, then a tab bar: Dashboard, New entry, Past journals, Weather, and Calendar. The dashboard is a weather snapshot with those same actions. The entry form is only the New entry tab.
 
 PRD ref: `prd.md > Screens and Layout`.
 
@@ -89,7 +89,7 @@ PRD ref: `prd.md > Zip code`, `prd.md > States and Boundaries`.
 
 ### Today
 
-The dashboard and the entry are this page. Date is the local calendar day at launch. Fields: temperature, humidity, soil pH, sugar content, notes, save. All editable. Save allowed when every field is empty. A second save the same day replaces that date’s entry.
+The dashboard snapshot: place, date, current temperature, and humidity. Today's saved soil pH, sugar, and notes appear here after a save. The editable form is the New entry tab.
 
 PRD ref: `prd.md > Today's entry`.
 

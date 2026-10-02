@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Press F5, enter your vineyard zip, save a soil reading and a note, close the app, press F5 again, and confirm today's entry is still there.
   Commit: `Log today's vineyard readings against live weather`
 
-- [ ] **2. Open an earlier day**
+- [x] **2. Open an earlier day**
   Becomes usable: Pick a past date and see that day's weather beside that day's journal entry.
   Why now: The kernel is opening a date, not only logging today. Today has to save first so a past day has something to show.
   PRD ref: `prd.md > Calendar`, `prd.md > The Core Journey`
@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Save today, open the calendar, choose another day, and confirm you see that day rather than a second copy of today.
   Commit: `Show weather and the journal entry for an earlier day`
 
-- [ ] **3. Forecast, history, and the soil trend**
+- [x] **3. Forecast, history, and the soil trend**
   Becomes usable: A weather tab with today's forecast, the week, 30 days of history, temperature and humidity charts, and the Open-Meteo credit. A journal tab with past entries and a soil pH chart.
   Why now: These are the look-across-time views. They sit on the file and the forecast slice 1 already proved.
   PRD ref: `prd.md > Weather`, `prd.md > Journal list and soil trend`
@@ -64,3 +64,4 @@ Activity mode: not started
 
 - Weather requests go through Windows `curl.exe` instead of Godot `HTTPRequest` — Godot 4.7.2 failed the TLS handshake to Open-Meteo with mbedtls error `-0x2700`, and the same GET succeeded with the OS certificate store. The URLs and the on-screen behavior are unchanged.
 - Today's page scrolls — the Save button was below the window because the form was taller than the parchment page and nothing could scroll.
+- The dashboard is a weather snapshot, and the entry form is a separate tab — the first build put the whole form on the opening screen. The learner's picture was a snapshot plus tabs for a new entry, past journals, and weather.
