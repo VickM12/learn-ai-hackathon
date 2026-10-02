@@ -2,6 +2,7 @@ extends SceneTree
 
 const WeatherClient = preload("res://scripts/weather_client.gd")
 const TrendChart = preload("res://scripts/trend_chart.gd")
+const DateRangePicker = preload("res://scripts/date_range_picker.gd")
 
 
 func _initialize() -> void:
@@ -59,9 +60,27 @@ func _run() -> void:
 		push_error("journal range did not update chart")
 		quit(1)
 		return
+
+	var picker: VBoxContainer = DateRangePicker.new()
+	root.add_child(picker)
+	await process_frame
+	picker._on_preset_selected(picker.preset.item_count - 1)
+	if not picker.calendar_panel.visible:
+		push_error("custom calendar did not open")
+		quit(1)
+		return
+	picker._pick_date("2026-09-01")
+	picker._pick_date("2026-10-01")
+	picker._apply_custom()
+	if picker.start_date != "2026-09-01" or picker.end_date != "2026-10-01":
+		push_error("calendar did not retain the selected range")
+		quit(1)
+		return
 	print("ROWS ", rows.size())
 	print("CHART ", chart.point_count())
 	print("RANGE_CHARTS 2 2")
+	print("CALENDAR_RANGE ", picker.start_date, " ", picker.end_date)
+	picker.free()
 	weather_view.free()
 	journal_view.free()
 	chart.free()

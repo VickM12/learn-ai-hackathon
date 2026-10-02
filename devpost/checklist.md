@@ -68,3 +68,4 @@ Activity mode: not started
 - The navigation now looks like folder tabs attached to a padded parchment page, and the dashboard uses summary cards — the first tabbed pass repeated navigation as large dashboard buttons and cramped text against the page edge.
 - The New entry form now has inner page margins, and trend charts use labeled scales, grid lines, tinted fills, colored lines, and data markers — the first charts were unlabeled black polylines and the form still touched its inner border.
 - Weather and Past journals now have common date-range presets plus a custom from/to range; applying one filters the visible rows and recomputes each chart. Weather history increased from 30 to 90 days so all common presets have data.
+- Custom ranges now use an inline month calendar with previous/next navigation and separate Start/End selection buttons — typing `YYYY-MM-DD` was too cumbersome for the intended app.
