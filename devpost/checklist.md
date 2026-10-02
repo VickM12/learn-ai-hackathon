@@ -63,3 +63,4 @@ Activity mode: not started
 ## Revisions
 
 - Weather requests go through Windows `curl.exe` instead of Godot `HTTPRequest` — Godot 4.7.2 failed the TLS handshake to Open-Meteo with mbedtls error `-0x2700`, and the same GET succeeded with the OS certificate store. The URLs and the on-screen behavior are unchanged.
+- Today's page scrolls — the Save button was below the window because the form was taller than the parchment page and nothing could scroll.

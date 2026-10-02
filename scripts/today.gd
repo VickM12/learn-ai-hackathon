@@ -30,12 +30,21 @@ func _ready() -> void:
 	var panel := Panel.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_child(panel)
 
+	var scroll := ScrollContainer.new()
+	scroll.name = "JournalScroll"
+	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	panel.add_child(scroll)
+	scroll.get_v_scroll_bar().custom_minimum_size.x = 18
+
 	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 10)
-	panel.add_child(box)
+	scroll.add_child(box)
 
 	var title := Label.new()
 	title.text = "Vineyard Journal"
@@ -73,8 +82,7 @@ func _ready() -> void:
 	notes_name.text = "Notes and observations"
 	box.add_child(notes_name)
 	notes_edit = TextEdit.new()
-	notes_edit.custom_minimum_size = Vector2(0, 140)
-	notes_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	notes_edit.custom_minimum_size = Vector2(0, 120)
 	box.add_child(notes_edit)
 
 	invalid_label = Label.new()
@@ -83,6 +91,7 @@ func _ready() -> void:
 	box.add_child(invalid_label)
 
 	var save_button := Button.new()
+	save_button.name = "SaveButton"
 	save_button.text = "Save"
 	save_button.pressed.connect(_save)
 	box.add_child(save_button)
