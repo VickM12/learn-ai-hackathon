@@ -65,3 +65,4 @@ Activity mode: not started
 - Weather requests go through Windows `curl.exe` instead of Godot `HTTPRequest` — Godot 4.7.2 failed the TLS handshake to Open-Meteo with mbedtls error `-0x2700`, and the same GET succeeded with the OS certificate store. The URLs and the on-screen behavior are unchanged.
 - Today's page scrolls — the Save button was below the window because the form was taller than the parchment page and nothing could scroll.
 - The dashboard is a weather snapshot, and the entry form is a separate tab — the first build put the whole form on the opening screen. The learner's picture was a snapshot plus tabs for a new entry, past journals, and weather.
+- The navigation now looks like folder tabs attached to a padded parchment page, and the dashboard uses summary cards — the first tabbed pass repeated navigation as large dashboard buttons and cramped text against the page edge.

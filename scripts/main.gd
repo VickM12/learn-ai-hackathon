@@ -42,18 +42,14 @@ func _ready() -> void:
 		margin.add_theme_constant_override(side, 28)
 	add_child(margin)
 
-	var panel := Panel.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(panel)
-
 	var column := VBoxContainer.new()
-	column.set_anchors_preset(Control.PRESET_FULL_RECT)
-	column.add_theme_constant_override("separation", 8)
-	panel.add_child(column)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", -2)
+	margin.add_child(column)
 
 	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 6)
+	tabs.add_theme_constant_override("separation", 4)
 	column.add_child(tabs)
 	var group := ButtonGroup.new()
 	for pair in [["Dashboard", "dashboard"], ["New entry", "entry"], ["Past journals", "journal"], ["Weather", "weather"], ["Calendar", "calendar"]]:
@@ -62,14 +58,28 @@ func _ready() -> void:
 		button.toggle_mode = true
 		button.button_group = group
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_style_folder_tab(button)
 		button.pressed.connect(_show_tab.bind(pair[1]))
 		tabs.add_child(button)
 		tab_buttons[pair[1]] = button
 
+	var page_panel := Panel.new()
+	page_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(page_panel)
+
+	var page_margin := MarginContainer.new()
+	page_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	page_margin.add_theme_constant_override("margin_left", 34)
+	page_margin.add_theme_constant_override("margin_top", 28)
+	page_margin.add_theme_constant_override("margin_right", 34)
+	page_margin.add_theme_constant_override("margin_bottom", 30)
+	page_panel.add_child(page_margin)
+
 	content = Control.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(content)
+	page_margin.add_child(content)
 
 	pages = {
 		"dashboard": DashboardScene.instantiate(),
@@ -83,10 +93,6 @@ func _ready() -> void:
 		page.visible = false
 		content.add_child(page)
 
-	pages["dashboard"].open_entry.connect(func() -> void: _show_tab("entry"))
-	pages["dashboard"].open_journal.connect(func() -> void: _show_tab("journal"))
-	pages["dashboard"].open_weather.connect(func() -> void: _show_tab("weather"))
-	pages["dashboard"].open_calendar.connect(func() -> void: _show_tab("calendar"))
 	pages["dashboard"].retry_requested.connect(_load_weather)
 	pages["entry"].retry_requested.connect(_load_weather)
 	pages["entry"].save_requested.connect(_on_save)
@@ -100,6 +106,39 @@ func _apply_theme() -> void:
 	var font := FontFile.new()
 	if font.load_dynamic_font("res://theme/EBGaramond-Regular.ttf") == OK:
 		theme.default_font = font
+
+
+func _style_folder_tab(button: Button) -> void:
+	var normal := _tab_style(Color("d8bc83"), 1, 8)
+	var hover := _tab_style(Color("ead39f"), 1, 8)
+	var active := _tab_style(Color("f4e4c4"), 0, 11)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", active)
+	button.add_theme_stylebox_override("hover_pressed", active)
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.add_theme_color_override("font_color", Color("3a281b"))
+	button.add_theme_color_override("font_hover_color", Color("24170f"))
+	button.add_theme_color_override("font_pressed_color", Color("24170f"))
+	button.add_theme_font_size_override("font_size", 20)
+	button.custom_minimum_size.y = 50
+
+
+func _tab_style(color: Color, bottom_border: int, bottom_margin: float) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color("8c6a45")
+	style.set_border_width_all(1)
+	style.border_width_bottom = bottom_border
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 0
+	style.corner_radius_bottom_right = 0
+	style.content_margin_top = 10
+	style.content_margin_bottom = bottom_margin
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	return style
 
 
 func _show_state() -> void:
