@@ -35,8 +35,35 @@ func _run() -> void:
 		push_error("soil series missing")
 		quit(1)
 		return
+
+	var weather_view: Control = load("res://scenes/weather.tscn").instantiate()
+	root.add_child(weather_view)
+	await process_frame
+	weather_view.show_weather("2026-10-02", 60.0, 80.0, rows)
+	weather_view._render_range("2026-10-02", "2026-10-03")
+	if weather_view.temp_chart.point_count() != 2:
+		push_error("weather range did not update chart")
+		quit(1)
+		return
+
+	var journal_view: Control = load("res://scenes/journal.tscn").instantiate()
+	root.add_child(journal_view)
+	await process_frame
+	journal_view.show_entries({
+		"2026-09-01": {"soil_ph": 6.1},
+		"2026-10-02": {"soil_ph": 6.4},
+		"2026-10-03": {"soil_ph": 6.6},
+	}, {})
+	journal_view._render_range("2026-10-02", "2026-10-03")
+	if journal_view.chart.point_count() != 2:
+		push_error("journal range did not update chart")
+		quit(1)
+		return
 	print("ROWS ", rows.size())
 	print("CHART ", chart.point_count())
+	print("RANGE_CHARTS 2 2")
+	weather_view.free()
+	journal_view.free()
 	chart.free()
 	client.free()
 	quit(0)

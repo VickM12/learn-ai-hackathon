@@ -11,7 +11,7 @@ Vineyard Journal is a Godot app exported as one Windows program. TwoBit Territor
 
 The zip code and the journal live in one file on the machine, in Godot’s `user://` folder for this app. Nothing is sent to an account.
 
-Weather comes from Open-Meteo. The app turns the zip into a place, then asks for temperature and humidity: right now, the next 7 days, and the past 30 days. That reply fills Today and the weather tab. A failed weather call leaves the journal usable.
+Weather comes from Open-Meteo. The app turns the zip into a place, then asks for temperature and humidity: right now, the next 7 days, and the past 90 days. That reply fills Today and the weather tab. A failed weather call leaves the journal usable.
 
 Opening the app on a given day loads that day’s page. Saving writes that day into the file. Opening the app again the same day reads that same entry back.
 
@@ -26,8 +26,8 @@ PRD ref: `prd.md > The Core Journey`.
 5. Forecast failed: Today shows a short plain error and retry. Soil pH, sugar, notes, and save still work. Temperature and humidity stay editable and empty until a later pull succeeds.
 6. Save writes today’s fields into `journal.json` under that date, replacing any previous entry for the same date. Empty fields are stored as empty. The page shows the saved values.
 7. They quit and open the executable again the same day. `JournalStore` finds that date and `Today` shows the saved entry.
-8. `Calendar` lists days. Choosing one shows that date, Open-Meteo’s temperature and humidity when that date is inside the loaded 30-day past plus 7-day forecast, and the saved entry when one exists.
-9. `Weather` shows today’s current readings, the 7-day forecast, the 30-day history, and two trend charts (temperature, humidity). A credit line names Open-Meteo.
+8. `Calendar` lists days. Choosing one shows that date, Open-Meteo’s temperature and humidity when that date is inside the loaded 90-day past plus 7-day forecast, and the saved entry when one exists.
+9. `Weather` shows today’s current readings, the 7-day forecast, the 90-day history, and two trend charts (temperature, humidity). Preset and custom date ranges filter both rows and charts. A credit line names Open-Meteo.
 10. `Journal` lists saved entries and draws a soil-pH chart from entries that have a pH value.
 
 ## Stack
@@ -95,7 +95,7 @@ PRD ref: `prd.md > Today's entry`.
 
 ### Weather view
 
-Today’s current temperature and humidity, seven daily forecast rows, thirty daily history rows, a temperature chart, a humidity chart, retry, and the Open-Meteo credit.
+Today’s current temperature and humidity, seven daily forecast rows, ninety daily history rows, a temperature chart, a humidity chart, preset/custom date ranges, retry, and the Open-Meteo credit.
 
 PRD ref: `prd.md > Weather`.
 
@@ -202,7 +202,7 @@ Use the first result where `country_code` is `US` and `postcodes` includes the e
 
 **Forecast**
 
-`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m&hourly=relative_humidity_2m&daily=temperature_2m_mean&temperature_unit=fahrenheit&timezone=auto&past_days=30&forecast_days=7`
+`GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m&hourly=relative_humidity_2m&daily=temperature_2m_mean&temperature_unit=fahrenheit&timezone=auto&past_days=90&forecast_days=7`
 
 Humidity has no daily aggregate in the forecast docs, so the client averages `hourly.relative_humidity_2m` into one percent per local day. Daily temperature is `temperature_2m_mean`. Today’s form fields use `current`, not the daily mean.
 
@@ -222,7 +222,7 @@ Weather credit, on the weather surface: “Weather data by Open-Meteo.com, CC BY
 
 - **Company name in the exe, signing off** instead of a signed publisher — there is no certificate yet. Signing needs a certificate plus Windows SDK `SignTool`, then `codesign/enable` on the Windows preset. Docs: https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_windows.html
 - **One JSON file** instead of a database — one grower, one site, one zip.
-- **One Open-Meteo forecast call with `past_days=30`** instead of the separate historical archive — enough history to show a trend in the demo. Older journal days still open.
+- **One Open-Meteo forecast call with `past_days=90`** instead of the separate historical archive — enough history for common 7/30/90-day ranges. Older journal days still open, but weather outside the loaded range is labeled unavailable.
 - **Charts drawn in Godot** instead of a chart plugin — three series, no extra dependency.
 - **Sugar is a stored field with no chart** — implements the PRD split. Source: `prd.md > Deferred From the POC`.
 

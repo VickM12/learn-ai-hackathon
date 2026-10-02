@@ -30,7 +30,7 @@ Build mode: fast
   Commit: `Show weather and the journal entry for an earlier day`
 
 - [x] **3. Forecast, history, and the soil trend**
-  Becomes usable: A weather tab with today's forecast, the week, 30 days of history, temperature and humidity charts, and the Open-Meteo credit. A journal tab with past entries and a soil pH chart.
+  Becomes usable: A weather tab with today's forecast, the week, 90 days of history, range-filtered temperature and humidity charts, and the Open-Meteo credit. A journal tab with range-filtered past entries and a soil pH chart.
   Why now: These are the look-across-time views. They sit on the file and the forecast slice 1 already proved.
   PRD ref: `prd.md > Weather`, `prd.md > Journal list and soil trend`
   Spec ref: `spec.md > Weather view`, `spec.md > Journal view`, `spec.md > Trend chart`, `spec.md > External Services and Dependencies`
@@ -67,3 +67,4 @@ Activity mode: not started
 - The dashboard is a weather snapshot, and the entry form is a separate tab — the first build put the whole form on the opening screen. The learner's picture was a snapshot plus tabs for a new entry, past journals, and weather.
 - The navigation now looks like folder tabs attached to a padded parchment page, and the dashboard uses summary cards — the first tabbed pass repeated navigation as large dashboard buttons and cramped text against the page edge.
 - The New entry form now has inner page margins, and trend charts use labeled scales, grid lines, tinted fills, colored lines, and data markers — the first charts were unlabeled black polylines and the form still touched its inner border.
+- Weather and Past journals now have common date-range presets plus a custom from/to range; applying one filters the visible rows and recomputes each chart. Weather history increased from 30 to 90 days so all common presets have data.

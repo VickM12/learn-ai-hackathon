@@ -1,12 +1,16 @@
 extends Control
 
 const TrendChart = preload("res://scripts/trend_chart.gd")
+const DateRangePicker = preload("res://scripts/date_range_picker.gd")
 
 var today_label: Label
 var forecast_list: VBoxContainer
 var history_list: VBoxContainer
 var temp_chart: Control
 var humidity_chart: Control
+var range_picker: VBoxContainer
+var all_rows: Array = []
+var shown_today_key := ""
 
 
 func _ready() -> void:
@@ -18,10 +22,13 @@ func _ready() -> void:
 	today_label = Label.new()
 	today_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(today_label)
-	box.add_child(_heading("This week"))
+	range_picker = DateRangePicker.new()
+	range_picker.include_next = true
+	box.add_child(range_picker)
+	box.add_child(_heading("Forecast in range"))
 	forecast_list = VBoxContainer.new()
 	box.add_child(forecast_list)
-	box.add_child(_heading("Recent days"))
+	box.add_child(_heading("Past days in range"))
 	history_list = VBoxContainer.new()
 	box.add_child(history_list)
 	box.add_child(_heading("Temperature"))
@@ -34,22 +41,31 @@ func _ready() -> void:
 	credit.text = "Weather data by Open-Meteo.com, CC BY 4.0."
 	credit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(credit)
+	range_picker.range_changed.connect(_render_range)
 
 
 func show_weather(today_key: String, current_temp, current_humidity, rows: Array) -> void:
+	shown_today_key = today_key
+	all_rows = rows.duplicate(true)
 	today_label.text = "%s — %s°F, humidity %s%%." % [today_key, _num(current_temp), _num(current_humidity)]
+	_render_range(range_picker.start_date, range_picker.end_date)
+
+
+func _render_range(start_date: String, end_date: String) -> void:
 	_clear(forecast_list)
 	_clear(history_list)
 	var temps: Array = []
 	var humidities: Array = []
-	for row in rows:
+	for row in all_rows:
 		if typeof(row) != TYPE_DICTIONARY:
 			continue
 		var day := str(row.get("date", ""))
+		if not _in_range(day, start_date, end_date):
+			continue
 		var line := "%s   %s°F   %s%%" % [day, _num(row.get("temperature")), _num(row.get("humidity"))]
 		var label := Label.new()
 		label.text = line
-		if day >= today_key:
+		if day >= shown_today_key:
 			forecast_list.add_child(label)
 		else:
 			history_list.add_child(label)
@@ -67,6 +83,14 @@ func show_weather(today_key: String, current_temp, current_humidity, rows: Array
 		history_list.add_child(empty_history)
 	temp_chart.set_series(temps, Color("b35c32"))
 	humidity_chart.set_series(humidities, Color("3f7182"))
+
+
+func _in_range(date_key: String, start_date: String, end_date: String) -> bool:
+	if not start_date.is_empty() and date_key < start_date:
+		return false
+	if not end_date.is_empty() and date_key > end_date:
+		return false
+	return true
 
 
 func _heading(text: String) -> Label:

@@ -79,6 +79,7 @@ Today's forecast and the weekly forecast show temperature and humidity. Historic
 
 - [ ] The weather tab shows today's forecast, a weekly forecast, past days, and a trend graph.
 - [ ] Those views show temperature and humidity.
+- [ ] Preset and custom date ranges filter the visible weather rows and both weather charts.
 - [ ] If the weather cannot be pulled, Today shows a short plain error and a retry control.
 - [ ] Retry requests the weather again.
 - [ ] The error does not block saving the day's entry.
@@ -100,6 +101,7 @@ The journal tab lists past entries. Each entry shows its date and whatever was s
 
 - [ ] Past entries appear as a list with date and saved fields.
 - [ ] The soil trend uses saved soil pH values.
+- [ ] Preset and custom date ranges filter both the past-entry list and the soil trend.
 - [ ] With no entries in the journal, Today says "write an entry to get started."
 
 ## States and Boundaries

@@ -32,7 +32,7 @@ func fetch_forecast(latitude: float, longitude: float) -> Dictionary:
 		"https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s"
 		+ "&current=temperature_2m,relative_humidity_2m"
 		+ "&hourly=relative_humidity_2m&daily=temperature_2m_mean"
-		+ "&temperature_unit=fahrenheit&timezone=auto&past_days=30&forecast_days=7"
+		+ "&temperature_unit=fahrenheit&timezone=auto&past_days=90&forecast_days=7"
 	) % [_num(latitude), _num(longitude)]
 	last_forecast = await _get_json(url)
 	return last_forecast

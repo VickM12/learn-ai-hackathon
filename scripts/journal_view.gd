@@ -1,10 +1,14 @@
 extends Control
 
 const TrendChart = preload("res://scripts/trend_chart.gd")
+const DateRangePicker = preload("res://scripts/date_range_picker.gd")
 
 var list: VBoxContainer
 var detail: Label
 var chart: Control
+var range_picker: VBoxContainer
+var all_entries: Dictionary = {}
+var all_weather_by_date: Dictionary = {}
 
 
 func _ready() -> void:
@@ -13,6 +17,8 @@ func _ready() -> void:
 	title.text = "Past journals"
 	title.add_theme_font_size_override("font_size", 32)
 	box.add_child(title)
+	range_picker = DateRangePicker.new()
+	box.add_child(range_picker)
 	detail = Label.new()
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail.text = "Choose an entry to see that day's weather beside it."
@@ -25,34 +31,58 @@ func _ready() -> void:
 	list = VBoxContainer.new()
 	list.add_theme_constant_override("separation", 8)
 	box.add_child(list)
+	range_picker.range_changed.connect(_render_range)
 
 
 func show_entries(entries: Dictionary, weather_by_date: Dictionary) -> void:
+	all_entries = entries.duplicate(true)
+	all_weather_by_date = weather_by_date.duplicate(true)
+	_render_range(range_picker.start_date, range_picker.end_date)
+
+
+func _render_range(start_date: String, end_date: String) -> void:
 	for child in list.get_children():
 		child.queue_free()
-	var keys: Array = entries.keys()
+	var keys: Array = []
+	for key in all_entries.keys():
+		var date_key := str(key)
+		if _in_range(date_key, start_date, end_date):
+			keys.append(date_key)
 	keys.sort()
-	keys.reverse()
 	var soil: Array = []
 	if keys.is_empty():
 		var empty := Label.new()
-		empty.text = "No journal entries yet."
+		empty.text = "No journal entries in this range."
 		list.add_child(empty)
 	for key in keys:
-		var entry = entries[key]
-		if typeof(entry) != TYPE_DICTIONARY:
+		var entry_for_chart = all_entries[key]
+		if typeof(entry_for_chart) != TYPE_DICTIONARY:
 			continue
-		if entry.get("soil_ph") != null:
-			soil.append(float(entry["soil_ph"]))
+		if entry_for_chart.get("soil_ph") != null:
+			soil.append(float(entry_for_chart["soil_ph"]))
+	var display_keys := keys.duplicate()
+	display_keys.reverse()
+	for key in display_keys:
+		var entry_for_list = all_entries[key]
+		if typeof(entry_for_list) != TYPE_DICTIONARY:
+			continue
 		var button := Button.new()
-		button.text = "%s  —  soil %s, sugar %s" % [key, _num(entry.get("soil_ph")), _num(entry.get("sugar"))]
+		button.text = "%s  —  soil %s, sugar %s" % [key, _num(entry_for_list.get("soil_ph")), _num(entry_for_list.get("sugar"))]
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var date_key := str(key)
-		button.pressed.connect(func() -> void: _show_detail(date_key, entry, weather_by_date))
+		button.pressed.connect(func() -> void: _show_detail(date_key, entry_for_list, all_weather_by_date))
 		list.add_child(button)
 	chart.set_series(soil, Color("557a46"))
 	if keys.is_empty():
-		detail.text = "No journal entries yet."
+		detail.text = "No journal entries in this range."
+
+
+func _in_range(date_key: String, start_date: String, end_date: String) -> bool:
+	if not start_date.is_empty() and date_key < start_date:
+		return false
+	if not end_date.is_empty() and date_key > end_date:
+		return false
+	return true
 
 
 func _show_detail(date_key: String, entry: Dictionary, weather_by_date: Dictionary) -> void:
