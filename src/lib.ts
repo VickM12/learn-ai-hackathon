@@ -37,6 +37,10 @@ export function today(): string {
   return localDateKey(new Date());
 }
 
+export function yearStart(): string {
+  return `${new Date().getFullYear()}-01-01`;
+}
+
 export function dateOffset(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -89,7 +93,64 @@ export async function geocodeZip(zip: string): Promise<Location> {
   };
 }
 
-export async function fetchWeather(location: Location): Promise<WeatherData> {
+type WeatherBody = {
+  current?: { temperature_2m?: number | null; relative_humidity_2m?: number | null };
+  hourly?: { time?: string[]; relative_humidity_2m?: Array<number | null> };
+  daily?: { time?: string[]; temperature_2m_mean?: Array<number | null> };
+};
+
+function rowsFromBody(body: WeatherBody): WeatherRow[] {
+  const humidity = new Map<string, { total: number; count: number }>();
+  body.hourly?.time?.forEach((time, index) => {
+    const value = body.hourly?.relative_humidity_2m?.[index];
+    if (value == null) return;
+    const date = time.slice(0, 10);
+    const current = humidity.get(date) ?? { total: 0, count: 0 };
+    humidity.set(date, { total: current.total + value, count: current.count + 1 });
+  });
+
+  return (body.daily?.time ?? []).map((date, index) => {
+    const humidityDay = humidity.get(date);
+    return {
+      date,
+      temperature: body.daily?.temperature_2m_mean?.[index] ?? null,
+      humidity: humidityDay ? humidityDay.total / humidityDay.count : null,
+    };
+  });
+}
+
+function mergeRows(history: WeatherRow[], recent: WeatherRow[]): WeatherRow[] {
+  const byDate = new Map<string, WeatherRow>();
+  for (const row of history) byDate.set(row.date, row);
+  for (const row of recent) {
+    const existing = byDate.get(row.date);
+    byDate.set(row.date, {
+      date: row.date,
+      temperature: row.temperature ?? existing?.temperature ?? null,
+      humidity: row.humidity ?? existing?.humidity ?? null,
+    });
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function fetchArchive(location: Location, start: string, end: string): Promise<WeatherRow[]> {
+  if (!start || !end || start > end) return [];
+  const params = new URLSearchParams({
+    latitude: String(location.latitude),
+    longitude: String(location.longitude),
+    start_date: start,
+    end_date: end,
+    daily: "temperature_2m_mean",
+    hourly: "relative_humidity_2m",
+    temperature_unit: "fahrenheit",
+    timezone: "auto",
+  });
+  const response = await fetch(`https://archive-api.open-meteo.com/v1/archive?${params}`);
+  if (!response.ok) return [];
+  return rowsFromBody(await response.json());
+}
+
+export async function fetchWeather(location: Location, historyStart = yearStart()): Promise<WeatherData> {
   const params = new URLSearchParams({
     latitude: String(location.latitude),
     longitude: String(location.longitude),
@@ -98,35 +159,18 @@ export async function fetchWeather(location: Location): Promise<WeatherData> {
     daily: "temperature_2m_mean",
     temperature_unit: "fahrenheit",
     timezone: "auto",
-    past_days: "90",
+    past_days: "92",
     forecast_days: "7",
   });
-  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!response.ok) throw new Error("Weather could not be loaded.");
-  const body = await response.json();
-
-  const humidity = new Map<string, { total: number; count: number }>();
-  body.hourly?.time?.forEach((time: string, index: number) => {
-    const value = body.hourly.relative_humidity_2m[index];
-    if (value == null) return;
-    const date = time.slice(0, 10);
-    const current = humidity.get(date) ?? { total: 0, count: 0 };
-    humidity.set(date, { total: current.total + value, count: current.count + 1 });
-  });
-
-  const rows: WeatherRow[] = (body.daily?.time ?? []).map((date: string, index: number) => {
-    const humidityDay = humidity.get(date);
-    return {
-      date,
-      temperature: body.daily.temperature_2m_mean[index] ?? null,
-      humidity: humidityDay ? humidityDay.total / humidityDay.count : null,
-    };
-  });
+  const forecastResponse = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+  if (!forecastResponse.ok) throw new Error("Weather could not be loaded.");
+  const forecast: WeatherBody = await forecastResponse.json();
+  const history = await fetchArchive(location, historyStart, today());
 
   return {
-    currentTemperature: body.current?.temperature_2m ?? null,
-    currentHumidity: body.current?.relative_humidity_2m ?? null,
-    rows,
+    currentTemperature: forecast.current?.temperature_2m ?? null,
+    currentHumidity: forecast.current?.relative_humidity_2m ?? null,
+    rows: mergeRows(history, rowsFromBody(forecast)),
   };
 }
 

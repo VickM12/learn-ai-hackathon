@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -10,10 +10,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BookOpen, CalendarDays, CloudSun, LayoutDashboard, PenLine } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronDown, CloudSun, Grape, LayoutDashboard, PenLine } from "lucide-react";
 import {
   dateOffset,
   fetchWeather,
+  yearStart,
   formatNumber,
   geocodeZip,
   inRange,
@@ -25,8 +26,9 @@ import {
   type WeatherData,
   type WeatherRow,
 } from "./lib";
+import { allVarietals, filterVarietals, inRegion, sprayFocusFor, spraySchedule, zoneFit, type Varietal, type ZoneFit } from "./varietals";
 
-type Tab = "dashboard" | "entry" | "journals" | "weather" | "calendar";
+type Tab = "dashboard" | "entry" | "journals" | "weather" | "calendar" | "varietal";
 type RangeValue = { start: string; end: string };
 
 const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
@@ -35,6 +37,7 @@ const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "journals", label: "Past journals", icon: BookOpen },
   { id: "weather", label: "Weather", icon: CloudSun },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "varietal", label: "Varietal", icon: Grape },
 ];
 
 export default function App() {
@@ -43,18 +46,26 @@ export default function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weatherError, setWeatherError] = useState("");
   const [weatherAttempt, setWeatherAttempt] = useState(0);
+  const [historyStart, setHistoryStart] = useState(yearStart);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   useEffect(() => {
     if (!journal.location) return;
     let current = true;
     setWeatherError("");
-    fetchWeather(journal.location)
+    setWeatherLoading(true);
+    fetchWeather(journal.location, historyStart)
       .then((result) => current && setWeather(result))
-      .catch((error) => current && setWeatherError(error.message));
+      .catch((error) => current && setWeatherError(error.message))
+      .finally(() => current && setWeatherLoading(false));
     return () => {
       current = false;
     };
-  }, [journal.location, weatherAttempt]);
+  }, [journal.location, weatherAttempt, historyStart]);
+
+  const ensureHistory = (start: string) => {
+    if (start && start < historyStart) setHistoryStart(start);
+  };
 
   const updateJournal = (next: JournalData) => {
     setJournal(next);
@@ -115,11 +126,17 @@ export default function App() {
           <Journals entries={journal.entries} weatherByDate={weatherByDate} />
         )}
         {tab === "weather" && (
-          <WeatherView weather={weather} error={weatherError} />
+          <WeatherView
+            weather={weather}
+            error={weatherError}
+            loading={weatherLoading}
+            onHistoryStart={ensureHistory}
+          />
         )}
         {tab === "calendar" && (
           <CalendarView entries={journal.entries} weatherByDate={weatherByDate} />
         )}
+        {tab === "varietal" && <VarietalGuide zip={journal.location.zip} place={journal.location.name} />}
       </section>
     </main>
   );
@@ -205,7 +222,7 @@ function Dashboard({
           )}
         </article>
       </div>
-      <p className="page-hint">Use the folder tabs to add an entry or explore your vineyard history.</p>
+      <p className="page-hint">Use the folder tabs to add an entry, look up a varietal, or explore your vineyard history.</p>
     </div>
   );
 }
@@ -274,9 +291,17 @@ function DateRange({
   const [preset, setPreset] = useState("30");
   const [custom, setCustom] = useState({ start: dateOffset(-29), end: today() });
 
+  const applyCustom = (next: RangeValue) => {
+    setCustom(next);
+    if (next.start && next.end && next.start <= next.end) onChange(next);
+  };
+
   const choose = (value: string) => {
     setPreset(value);
-    if (value === "custom") return;
+    if (value === "custom") {
+      if (custom.start && custom.end && custom.start <= custom.end) onChange(custom);
+      return;
+    }
     if (value === "all") return onChange({ start: "", end: "" });
     if (value === "next") return onChange({ start: today(), end: dateOffset(6) });
     onChange({ start: dateOffset(-(Number(value) - 1)), end: today() });
@@ -296,10 +321,9 @@ function DateRange({
       </label>
       {preset === "custom" && (
         <div className="custom-range">
-          <label>Start<input type="date" value={custom.start} onChange={(event) => setCustom({ ...custom, start: event.target.value })} /></label>
+          <label>Start<input type="date" value={custom.start} max={custom.end} onChange={(event) => applyCustom({ ...custom, start: event.target.value })} /></label>
           <span>to</span>
-          <label>End<input type="date" min={custom.start} value={custom.end} onChange={(event) => setCustom({ ...custom, end: event.target.value })} /></label>
-          <button onClick={() => onChange(custom)} disabled={!custom.start || !custom.end || custom.start > custom.end}>Apply</button>
+          <label>End<input type="date" min={custom.start} value={custom.end} onChange={(event) => applyCustom({ ...custom, end: event.target.value })} /></label>
         </div>
       )}
     </div>
@@ -354,24 +378,46 @@ function Journals({
   );
 }
 
-function WeatherView({ weather, error }: { weather: WeatherData | null; error: string }) {
+function WeatherView({
+  weather,
+  error,
+  loading,
+  onHistoryStart,
+}: {
+  weather: WeatherData | null;
+  error: string;
+  loading: boolean;
+  onHistoryStart: (start: string) => void;
+}) {
   const [range, setRange] = useState<RangeValue>({ start: dateOffset(-29), end: today() });
   const rows = useMemo(
-    () => (weather?.rows ?? []).filter((row) => inRange(row.date, range.start, range.end)),
+    () => (weather?.rows ?? []).filter((row) => inRange(row.date, range.start, range.end) && (row.temperature != null || row.humidity != null)),
     [weather, range],
   );
+  const earliest = weather?.rows.find((row) => row.temperature != null)?.date ?? "";
+  const waiting = Boolean(loading && range.start && earliest && range.start < earliest);
+  const applyRange = (next: RangeValue) => {
+    setRange(next);
+    if (next.start) onHistoryStart(next.start);
+  };
   return (
     <div className="page">
       <header className="page-header"><div><span className="eyebrow">Open-Meteo</span><h1>Weather</h1></div><strong>{formatNumber(weather?.currentTemperature, "°F")}</strong></header>
-      <DateRange includeFuture onChange={setRange} />
+      <DateRange includeFuture onChange={applyRange} />
       {error && <p className="error">{error}</p>}
-      <div className="weather-charts">
-        <section className="chart-card"><h2>Temperature</h2><Trend data={rows} dataKey="temperature" color="#b65c32" unit="°F" area /></section>
-        <section className="chart-card"><h2>Humidity</h2><Trend data={rows} dataKey="humidity" color="#3f7182" unit="%" area /></section>
-      </div>
-      <div className="weather-table">
-        {rows.map((row) => <div key={row.date}><b>{row.date}</b><span>{formatNumber(row.temperature, "°F")}</span><span>{formatNumber(row.humidity, "%")}</span></div>)}
-      </div>
+      {waiting && <p className="empty-copy">Loading weather for this range…</p>}
+      {!loading && weather && rows.length === 0 && <p className="empty-copy">No weather in this range.</p>}
+      {rows.length >= 2 && (
+        <>
+          <div className="weather-charts">
+            <section className="chart-card"><h2>Temperature</h2><Trend data={rows} dataKey="temperature" color="#b65c32" unit="°F" area /></section>
+            <section className="chart-card"><h2>Humidity</h2><Trend data={rows} dataKey="humidity" color="#3f7182" unit="%" area /></section>
+          </div>
+          <div className="weather-table">
+            {rows.map((row) => <div key={row.date}><b>{row.date}</b><span>{formatNumber(row.temperature, "°F")}</span><span>{formatNumber(row.humidity, "%")}</span></div>)}
+          </div>
+        </>
+      )}
       <p className="credit">Weather data by Open-Meteo.com, CC BY 4.0.</p>
     </div>
   );
@@ -450,6 +496,225 @@ function CalendarView({
           {selectedEntry ? <><div className="reading-row"><span>Soil pH <b>{formatNumber(selectedEntry.soilPh)}</b></span><span>Sugar <b>{formatNumber(selectedEntry.sugar)}</b></span></div><p>{selectedEntry.notes || "No observations recorded."}</p></> : <p className="empty-copy">No journal entry for this day.</p>}
         </article>
       </div>
+    </div>
+  );
+}
+
+function fitLabel(name: string, zoneLabel: string, zoneNumber: number): string {
+  const fit: ZoneFit = zoneFit(name, zoneNumber);
+  if (fit === "marginal") return `Marginal · ${zoneLabel}`;
+  if (fit === "cold") return `Too tender · ${zoneLabel}`;
+  if (fit === "warm") return `Prefers cooler · ${zoneLabel}`;
+  return `Suited · ${zoneLabel}`;
+}
+
+function VarietalGuide({ zip, place }: { zip: string; place: string }) {
+  const catalog = useMemo(() => allVarietals(), []);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const [selected, setSelected] = useState<Varietal | null>(null);
+  const [miss, setMiss] = useState(false);
+  const [limitToRegion, setLimitToRegion] = useState(true);
+  const [zone, setZone] = useState<{ label: string; number: number } | null>(null);
+  const [zoneStatus, setZoneStatus] = useState<"loading" | "ready" | "missing">("loading");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const chevronFocus = useRef(false);
+  const filtering = query.trim().length > 0 && query !== selected?.name;
+  const options = useMemo(() => {
+    const matches = filtering ? filterVarietals(query) : catalog;
+    if (!limitToRegion || !zone) return matches;
+    return matches.filter((varietal) => inRegion(varietal.name, zone.number));
+  }, [filtering, query, catalog, limitToRegion, zone]);
+
+  useEffect(() => {
+    let current = true;
+    fetch(`https://phzmapi.org/${encodeURIComponent(zip)}.json`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("zone"))))
+      .then((body: { zone?: string }) => {
+        const label = body.zone ?? "";
+        const number = Number.parseInt(label, 10);
+        if (!current) return;
+        if (label && Number.isFinite(number)) {
+          setZone({ label, number });
+          setZoneStatus("ready");
+        } else setZoneStatus("missing");
+      })
+      .catch(() => current && setZoneStatus("missing"));
+    return () => {
+      current = false;
+    };
+  }, [zip]);
+
+  const choose = (varietal: Varietal) => {
+    setSelected(varietal);
+    setQuery(varietal.name);
+    setMiss(false);
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+
+  useEffect(() => {
+    const selectedIndex = options.findIndex((varietal) => varietal.name === selected?.name);
+    setHighlight(!filtering && selectedIndex >= 0 ? selectedIndex : 0);
+  }, [query, open, filtering, options, selected?.name]);
+
+  useEffect(() => {
+    if (!open) return;
+    document.getElementById(`varietal-option-${highlight}`)?.scrollIntoView({ block: "nearest" });
+  }, [highlight, open]);
+
+  return (
+    <div className="page">
+      <header className="page-header">
+        <div>
+          <span className="eyebrow">{zone ? `${place} · Zone ${zone.label}` : place}</span>
+          <h1>Varietal</h1>
+        </div>
+      </header>
+      <div className="varietal-tools">
+        <label>
+          Show
+          <select
+            value={limitToRegion && zone ? "region" : "all"}
+            onChange={(event) => setLimitToRegion(event.target.value === "region")}
+          >
+            <option value="region" disabled={!zone}>
+              {zone ? `Suited to ${place} · zone ${zone.label}` : "Suited to this ZIP"}
+            </option>
+            <option value="all">All varietals</option>
+          </select>
+        </label>
+      <div className="varietal-combo" ref={rootRef}>
+        <label htmlFor="varietal-input">Varietal</label>
+        <div className="varietal-combo-field">
+          <input
+            id="varietal-input"
+            ref={inputRef}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls="varietal-list"
+            aria-autocomplete="list"
+            value={query}
+            placeholder="Choose or type a varietal"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelected(null);
+              setMiss(false);
+              setOpen(true);
+            }}
+            onFocus={() => {
+              if (chevronFocus.current) {
+                chevronFocus.current = false;
+                return;
+              }
+              setOpen(true);
+              inputRef.current?.select();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                if (options.length === 0) return;
+                setOpen(true);
+                setHighlight((current) => {
+                  if (event.key === "ArrowDown") return Math.min(current + 1, options.length - 1);
+                  return Math.max(current - 1, 0);
+                });
+              } else if (event.key === "Escape") {
+                setOpen(false);
+              } else if (event.key === "Enter") {
+                event.preventDefault();
+                if (options.length === 0) {
+                  setSelected(null);
+                  setMiss(true);
+                  setOpen(false);
+                } else if (open || filtering) {
+                  choose(options[Math.min(highlight, options.length - 1)]);
+                } else {
+                  setOpen(true);
+                }
+              }
+            }}
+          />
+          <button
+            type="button"
+            aria-label="Show varietals"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (document.activeElement !== inputRef.current) chevronFocus.current = true;
+              inputRef.current?.focus();
+              setOpen((current) => !current);
+            }}
+          >
+            <ChevronDown size={18} />
+          </button>
+        </div>
+        {open && (
+          <div id="varietal-list" role="listbox" className="varietal-menu">
+            {options.length === 0 && <p className="empty-copy">{limitToRegion && zone ? "Nothing in this region matches. Choose All varietals to search the full list." : "No matching varietal."}</p>}
+            {options.map((varietal, index) => (
+              <button
+                key={varietal.name}
+                id={`varietal-option-${index}`}
+                type="button"
+                role="option"
+                aria-selected={selected?.name === varietal.name}
+                className={index === highlight ? "active" : ""}
+                onMouseEnter={() => setHighlight(index)}
+                onClick={() => choose(varietal)}
+              >
+                {varietal.name}
+                <span>{zone ? fitLabel(varietal.name, zone.label, zone.number) : varietal.color}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      </div>
+      {zoneStatus === "missing" && <p className="empty-copy">This ZIP has no hardiness zone on file, so the list shows every varietal.</p>}
+      {miss && <p className="empty-copy">No guide for “{query}”. Choose a name from the list.</p>}
+      {selected && (
+        <>
+          <article className="summary-card varietal-hero">
+            <span className="eyebrow">{selected.species}</span>
+            <h2>{selected.name}</h2>
+            <p>{selected.summary}</p>
+            <div className="reading-row">
+              <span>Color <b>{selected.color}</b></span>
+              <span>Region <b>{zone ? fitLabel(selected.name, zone.label, zone.number) : selected.hardiness}</b></span>
+            </div>
+          </article>
+          <div className="guide-grid">
+            <section className="chart-card"><h2>Planting</h2><p>{selected.planting}</p></section>
+            <section className="chart-card"><h2>Maintenance</h2><p>{selected.maintenance}</p></section>
+            <section className="chart-card"><h2>Harvesting</h2><p>{selected.harvesting}</p></section>
+          </div>
+          {zone && (zone.number < 5 || zone.number > 6) && (
+            <p className="credit">These notes describe a humid cold-winter season. In zone {zone.label}, shift the dates and check a local extension guide.</p>
+          )}
+        </>
+      )}
+      <section className="chart-card spray-card">
+        <h2>Suggested spray schedule</h2>
+        {selected && <p><b>{selected.name}.</b> {sprayFocusFor(selected.name)}</p>}
+        <ol className="spray-list">
+          {spraySchedule.map((step) => (
+            <li key={step.when}>
+              <b>{step.when}</b>
+              <p>{step.detail}</p>
+            </li>
+          ))}
+        </ol>
+        <p className="credit">A timing outline for a humid summer. It is not a product, a rate, or a substitute for the label or your state extension guide.</p>
+      </section>
     </div>
   );
 }
